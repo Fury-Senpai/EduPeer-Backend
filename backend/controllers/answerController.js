@@ -4,6 +4,41 @@ const Answer = require('../models/Answer');
 const Question = require('../models/Question');
 const User = require('../models/User');
 
+
+const getAnswersByQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+
+    if (!mongoose.isValidObjectId(questionId)) {
+      return res.status(400).json({ message: 'Invalid question id' });
+    }
+
+    const question = await Question.findById(questionId);
+
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    const answers = await Answer.find({ question: questionId })
+      .populate('author', 'name role karma')
+      .sort({ createdAt: -1 });
+
+    const sortedAnswers = answers.sort((a, b) => {
+      const upvoteDiff = b.upvotes.length - a.upvotes.length;
+
+      if (upvoteDiff !== 0) {
+        return upvoteDiff;
+      }
+
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    return res.status(200).json(sortedAnswers);
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to fetch answers', error: error.message });
+  }
+};
+
 const createAnswer = async (req, res) => {
   try {
     const { content } = req.body;
@@ -117,6 +152,7 @@ const acceptAnswer = async (req, res) => {
 };
 
 module.exports = {
+  getAnswersByQuestion,
   createAnswer,
   upvoteAnswer,
   acceptAnswer,
