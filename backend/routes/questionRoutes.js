@@ -16,6 +16,5 @@ router.get('/:id', getQuestion);
 router.post('/', authMiddleware, createQuestion);
 router.delete('/:id', authMiddleware, deleteQuestion);
 router.put('/upvote/:id', authMiddleware, upvoteQuestion);
-router.post('/:id/upvote', authMiddleware, upvoteQuestion);
 
 module.exports = router;
