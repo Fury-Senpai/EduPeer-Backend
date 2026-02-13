@@ -34,10 +34,6 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'name, email, and password are required' });
     }
 
-    if (role && !ALLOWED_ROLES.includes(role)) {
-      return res.status(400).json({ message: 'role must be either student or teacher' });
-    }
-
     const normalizedEmail = email.toLowerCase().trim();
     const existingUser = await User.findOne({ email: normalizedEmail });
 

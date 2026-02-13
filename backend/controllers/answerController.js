@@ -4,6 +4,7 @@ const Answer = require('../models/Answer');
 const Question = require('../models/Question');
 const User = require('../models/User');
 
+
 const getAnswersByQuestion = async (req, res) => {
   try {
     const { questionId } = req.params;
@@ -79,6 +80,31 @@ const upvoteAnswer = async (req, res) => {
 
     const answer = await Answer.findById(id);
 
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid answer id' });
+    }
+
+    answer.upvotes.push(req.user._id);
+    await answer.save();
+
+    await User.findByIdAndUpdate(answer.author, { $inc: { karma: 10 } });
+
+    return res.status(200).json(answer);
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to upvote answer', error: error.message });
+  }
+};
+
+const acceptAnswer = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid answer id' });
+    }
+
+    const answer = await Answer.findById(id);
+
     if (!answer) {
       return res.status(404).json({ message: 'Answer not found' });
     }
@@ -97,7 +123,20 @@ const upvoteAnswer = async (req, res) => {
       });
     }
 
-    answer.upvotes.push(req.user._id);
+    if (answer.isAccepted) {
+      return res.status(400).json({ message: 'Answer is already accepted' });
+    }
+
+    const previouslyAccepted = await Answer.findOne({
+      question: answer.question,
+      isAccepted: true,
+    });
+
+    if (previouslyAccepted) {
+      return res.status(400).json({ message: 'This question already has an accepted answer' });
+    }
+
+    answer.isAccepted = true;
     await answer.save();
     await User.findByIdAndUpdate(answer.author, { $inc: { karma: 10 } });
 
