@@ -78,6 +78,15 @@ const acceptAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Answer is already accepted' });
     }
 
+    const previouslyAccepted = await Answer.findOne({
+      question: answer.question,
+      isAccepted: true,
+    });
+
+    if (previouslyAccepted) {
+      return res.status(400).json({ message: 'This question already has an accepted answer' });
+    }
+
     answer.isAccepted = true;
     await answer.save();
 

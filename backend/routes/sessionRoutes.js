@@ -11,6 +11,7 @@ const router = express.Router();
 
 router.post('/book', authMiddleware, bookSession);
 router.get('/my', authMiddleware, mySessions);
+router.put('/complete/:id', authMiddleware, completeSession);
 router.patch('/:id/complete', authMiddleware, completeSession);
 
 module.exports = router;

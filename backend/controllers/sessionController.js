@@ -9,6 +9,10 @@ const bookSession = async (req, res) => {
       return res.status(400).json({ message: 'teacherId, scheduledTime, and meetingLink are required' });
     }
 
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ message: 'Only students can book sessions' });
+    }
+
     const teacher = await User.findById(teacherId);
 
     if (!teacher || teacher.role !== 'teacher') {
@@ -57,6 +61,10 @@ const completeSession = async (req, res) => {
 
     if (!isTeacher && !isStudent) {
       return res.status(403).json({ message: 'Only session participants may complete this session' });
+    }
+
+    if (session.status === 'completed') {
+      return res.status(400).json({ message: 'Session is already completed' });
     }
 
     session.status = 'completed';
