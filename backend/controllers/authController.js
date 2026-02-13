@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 
+const ALLOWED_ROLES = ['student', 'teacher'];
+
 const buildUserSummary = (user) => ({
   id: user._id,
   name: user.name,
