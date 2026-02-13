@@ -4,7 +4,6 @@ const {
   getAnswersByQuestion,
   createAnswer,
   upvoteAnswer,
-  acceptAnswer,
 } = require('../controllers/answerController');
 const authMiddleware = require('../middleware/authMiddleware');
 
