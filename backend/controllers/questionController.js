@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const Question = require('../models/Question');
 const User = require('../models/User');
 
@@ -36,7 +38,13 @@ const listQuestions = async (_req, res) => {
 
 const getQuestion = async (req, res) => {
   try {
-    const question = await Question.findById(req.params.id).populate('author', 'name role karma');
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid question id' });
+    }
+
+    const question = await Question.findById(id).populate('author', 'name role karma');
 
     if (!question) {
       return res.status(404).json({ message: 'Question not found' });
@@ -50,7 +58,13 @@ const getQuestion = async (req, res) => {
 
 const deleteQuestion = async (req, res) => {
   try {
-    const question = await Question.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid question id' });
+    }
+
+    const question = await Question.findById(id);
 
     if (!question) {
       return res.status(404).json({ message: 'Question not found' });
@@ -70,28 +84,42 @@ const deleteQuestion = async (req, res) => {
 
 const upvoteQuestion = async (req, res) => {
   try {
-    const question = await Question.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid question id' });
+    }
+
+    const question = await Question.findById(id);
 
     if (!question) {
       return res.status(404).json({ message: 'Question not found' });
     }
 
-    const hasUpvoted = question.upvotes.some(
-      (userId) => userId.toString() === req.user._id.toString()
-    );
+    const voterId = req.user._id.toString();
+    const existingIndex = question.upvotes.findIndex((userId) => userId.toString() === voterId);
 
-    if (hasUpvoted) {
-      return res.status(400).json({ message: 'Question already upvoted by this user' });
+    if (existingIndex >= 0) {
+      question.upvotes.splice(existingIndex, 1);
+      await question.save();
+      await User.findByIdAndUpdate(question.author, { $inc: { karma: -5 } });
+
+      return res.status(200).json({
+        question,
+        voteStatus: 'removed',
+      });
     }
 
     question.upvotes.push(req.user._id);
     await question.save();
-
     await User.findByIdAndUpdate(question.author, { $inc: { karma: 5 } });
 
-    return res.status(200).json(question);
+    return res.status(200).json({
+      question,
+      voteStatus: 'upvoted',
+    });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to upvote question', error: error.message });
+    return res.status(500).json({ message: 'Failed to toggle question upvote', error: error.message });
   }
 };
 

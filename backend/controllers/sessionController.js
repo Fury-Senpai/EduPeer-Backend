@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const Session = require('../models/Session');
 const User = require('../models/User');
 
@@ -9,6 +11,20 @@ const bookSession = async (req, res) => {
       return res.status(400).json({ message: 'teacherId, scheduledTime, and meetingLink are required' });
     }
 
+    if (!mongoose.isValidObjectId(teacherId)) {
+      return res.status(400).json({ message: 'Invalid teacher id' });
+    }
+
+    const parsedTime = new Date(scheduledTime);
+
+    if (Number.isNaN(parsedTime.getTime())) {
+      return res.status(400).json({ message: 'scheduledTime must be a valid date' });
+    }
+
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ message: 'Only students can book sessions' });
+    }
+
     const teacher = await User.findById(teacherId);
 
     if (!teacher || teacher.role !== 'teacher') {
@@ -18,7 +34,7 @@ const bookSession = async (req, res) => {
     const session = await Session.create({
       teacher: teacherId,
       student: req.user._id,
-      scheduledTime,
+      scheduledTime: parsedTime,
       meetingLink,
     });
 
@@ -45,7 +61,13 @@ const mySessions = async (req, res) => {
 
 const completeSession = async (req, res) => {
   try {
-    const session = await Session.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid session id' });
+    }
+
+    const session = await Session.findById(id);
 
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
@@ -57,6 +79,10 @@ const completeSession = async (req, res) => {
 
     if (!isTeacher && !isStudent) {
       return res.status(403).json({ message: 'Only session participants may complete this session' });
+    }
+
+    if (session.status === 'completed') {
+      return res.status(400).json({ message: 'Session is already completed' });
     }
 
     session.status = 'completed';

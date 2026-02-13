@@ -19,10 +19,6 @@ const answerSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
   }],
-  isAccepted: {
-    type: Boolean,
-    default: false,
-  },
   createdAt: {
     type: Date,
     default: Date.now,
