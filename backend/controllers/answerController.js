@@ -1,6 +1,43 @@
+const mongoose = require('mongoose');
+
 const Answer = require('../models/Answer');
 const Question = require('../models/Question');
 const User = require('../models/User');
+
+
+const getAnswersByQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+
+    if (!mongoose.isValidObjectId(questionId)) {
+      return res.status(400).json({ message: 'Invalid question id' });
+    }
+
+    const question = await Question.findById(questionId);
+
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    const answers = await Answer.find({ question: questionId })
+      .populate('author', 'name role karma')
+      .sort({ createdAt: -1 });
+
+    const sortedAnswers = answers.sort((a, b) => {
+      const upvoteDiff = b.upvotes.length - a.upvotes.length;
+
+      if (upvoteDiff !== 0) {
+        return upvoteDiff;
+      }
+
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    return res.status(200).json(sortedAnswers);
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to fetch answers', error: error.message });
+  }
+};
 
 const createAnswer = async (req, res) => {
   try {
@@ -9,6 +46,10 @@ const createAnswer = async (req, res) => {
 
     if (!content) {
       return res.status(400).json({ message: 'content is required' });
+    }
+
+    if (!mongoose.isValidObjectId(questionId)) {
+      return res.status(400).json({ message: 'Invalid question id' });
     }
 
     const question = await Question.findById(questionId);
@@ -31,7 +72,13 @@ const createAnswer = async (req, res) => {
 
 const upvoteAnswer = async (req, res) => {
   try {
-    const answer = await Answer.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid answer id' });
+    }
+
+    const answer = await Answer.findById(id);
 
     if (!answer) {
       return res.status(404).json({ message: 'Answer not found' });
@@ -58,7 +105,13 @@ const upvoteAnswer = async (req, res) => {
 
 const acceptAnswer = async (req, res) => {
   try {
-    const answer = await Answer.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid answer id' });
+    }
+
+    const answer = await Answer.findById(id);
 
     if (!answer) {
       return res.status(404).json({ message: 'Answer not found' });
@@ -78,6 +131,15 @@ const acceptAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Answer is already accepted' });
     }
 
+    const previouslyAccepted = await Answer.findOne({
+      question: answer.question,
+      isAccepted: true,
+    });
+
+    if (previouslyAccepted) {
+      return res.status(400).json({ message: 'This question already has an accepted answer' });
+    }
+
     answer.isAccepted = true;
     await answer.save();
 
@@ -90,6 +152,7 @@ const acceptAnswer = async (req, res) => {
 };
 
 module.exports = {
+  getAnswersByQuestion,
   createAnswer,
   upvoteAnswer,
   acceptAnswer,
