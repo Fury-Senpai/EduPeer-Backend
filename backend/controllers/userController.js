@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const User = require('../models/User');
 const Question = require('../models/Question');
 const Answer = require('../models/Answer');
@@ -19,7 +21,13 @@ const getLeaderboard = async (_req, res) => {
 
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('name role karma');
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid user id' });
+    }
+
+    const user = await User.findById(id).select('name role karma');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
