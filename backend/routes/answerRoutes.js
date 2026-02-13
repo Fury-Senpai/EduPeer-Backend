@@ -10,7 +10,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
 router.post('/:questionId', authMiddleware, createAnswer);
-router.post('/:id/upvote', authMiddleware, upvoteAnswer);
-router.patch('/:id/accept', authMiddleware, acceptAnswer);
+router.put('/upvote/:id', authMiddleware, upvoteAnswer);
+router.put('/accept/:id', authMiddleware, acceptAnswer);
 
 module.exports = router;
