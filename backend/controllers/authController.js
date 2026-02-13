@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 
+const ALLOWED_ROLES = ['student', 'teacher'];
+
 const buildUserSummary = (user) => ({
   id: user._id,
   name: user.name,
@@ -28,8 +30,12 @@ const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'name, email, password, and role are required' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'name, email, and password are required' });
+    }
+
+    if (role && !ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({ message: 'role must be either student or teacher' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
