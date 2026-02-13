@@ -28,8 +28,8 @@ const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'name, email, password, and role are required' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'name, email, and password are required' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
