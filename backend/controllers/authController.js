@@ -3,7 +3,9 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 
-const ALLOWED_ROLES = ['student', 'teacher'];
+const ALLOWED_ROLES = (User.schema && User.schema.path('role') && User.schema.path('role').enumValues)
+  ? User.schema.path('role').enumValues
+  : [];
 
 const buildUserSummary = (user) => ({
   id: user._id,
